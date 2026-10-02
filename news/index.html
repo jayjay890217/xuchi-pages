@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="旭馳車業最新資訊與公告">
+<title>旭馳最新資訊</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+TC:wght@500;700;900&display=swap">
+<style>
+/* Layout: a garage bulletin wall — one big card per post, swiped left/right with scroll-snap; counter + dots under it. Single dark look by choice (shop's black/orange). */
+:root{
+  color-scheme: dark;
+  --bg:#0d0d0d;
+  --panel:#171717;
+  --line:#2c2c2c;
+  --org:#ff8a00;
+  --org2:#ffb35c;
+  --txt:#f3eee6;
+  --dim:#9d968b;
+  --f-disp:"Bebas Neue","Impact","Arial Narrow",sans-serif;
+  --f-body:"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--txt);font-family:var(--f-body);font-size:16px;line-height:1.65;
+  background-image:linear-gradient(transparent 0 calc(100% - 1px),rgba(255,138,0,.05) 0),linear-gradient(90deg,transparent 0 calc(100% - 1px),rgba(255,138,0,.05) 0);
+  background-size:28px 28px}
+.wrap{max-width:560px;margin:0 auto;padding-inline:16px;padding-block:18px 28px;display:flex;flex-direction:column;gap:14px;min-height:100%}
+header{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;border-bottom:3px solid var(--org);padding-bottom:8px}
+.brand{display:flex;flex-direction:column;line-height:1}
+.brand .en{font-family:var(--f-disp);font-size:44px;letter-spacing:.06em;color:var(--org)}
+.brand .zh{font-weight:900;font-size:15px;letter-spacing:.3em;margin-top:2px}
+.count{font-family:var(--f-disp);font-size:26px;letter-spacing:.05em;color:var(--dim);font-variant-numeric:tabular-nums}
+.count b{color:var(--txt);font-weight:400}
+
+.rail{display:flex;gap:14px;overflow-x:auto;scroll-snap-type:x mandatory;scroll-behavior:smooth;-webkit-overflow-scrolling:touch;
+  margin-inline:-16px;padding-inline:16px;scrollbar-width:none;overscroll-behavior-x:contain}
+.rail::-webkit-scrollbar{display:none}
+.card{flex:0 0 100%;min-width:0;scroll-snap-align:center;background:var(--panel);border:1px solid var(--line);border-radius:18px;overflow:hidden;
+  display:flex;flex-direction:column;box-shadow:0 0 0 1px rgba(255,138,0,.12),0 18px 40px rgba(0,0,0,.45)}
+.pic{position:relative;aspect-ratio:4/3;background:#000;max-width:100%}
+.pic img{width:100%;height:100%;object-fit:cover;display:block}
+.badge{position:absolute;left:12px;top:12px;background:var(--org);color:#111;font-weight:900;font-size:14px;padding:4px 10px;border-radius:8px;
+  box-shadow:3px 3px 0 #000;font-variant-numeric:tabular-nums}
+.new{position:absolute;right:12px;top:12px;font-family:var(--f-disp);font-size:20px;letter-spacing:.08em;color:#111;background:#fff;padding:0 8px;border-radius:6px;transform:rotate(4deg)}
+.txt{padding:16px 18px 20px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.txt h2{margin:0;font-size:22px;font-weight:900;line-height:1.3;text-wrap:balance}
+.txt p{margin:0;color:#d9d3c9;white-space:pre-line;overflow-wrap:anywhere}
+.more{align-self:flex-start;background:none;border:0;padding:0;color:var(--org);font:inherit;font-weight:700;cursor:pointer}
+.clip{display:-webkit-box;-webkit-line-clamp:6;-webkit-box-orient:vertical;overflow:hidden}
+
+.nav{display:flex;align-items:center;justify-content:center;gap:14px}
+.arrow{width:44px;height:44px;border-radius:50%;border:2px solid var(--org);background:transparent;color:var(--org);font-size:20px;font-weight:900;cursor:pointer;display:grid;place-items:center}
+.arrow:disabled{opacity:.25;cursor:default}
+.dots{display:flex;gap:7px;flex-wrap:wrap;justify-content:center;max-width:60%}
+.dots button{width:9px;height:9px;border-radius:9px;border:0;padding:0;background:#3a3a3a;cursor:pointer;transition:width .2s,background .2s}
+.dots button[aria-current="true"]{width:26px;background:var(--org)}
+:focus-visible{outline:3px solid var(--org2);outline-offset:3px}
+
+.state{border:2px dashed var(--line);border-radius:18px;padding:40px 20px;text-align:center;color:var(--dim)}
+.state b{display:block;font-family:var(--f-disp);font-size:34px;letter-spacing:.06em;color:var(--org);margin-bottom:4px}
+.skel{aspect-ratio:4/3;background:linear-gradient(90deg,#1a1a1a 25%,#232323 50%,#1a1a1a 75%);background-size:200% 100%;animation:sh 1.2s infinite linear;border-radius:18px}
+@keyframes sh{to{background-position:-200% 0}}
+.sample{font-size:12px;color:var(--dim);text-align:center}
+footer{margin-top:auto;text-align:center;font-size:12px;color:var(--dim)}
+@media (prefers-reduced-motion:reduce){.rail{scroll-behavior:auto}.skel{animation:none}}
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <header>
+    <div class="brand"><span class="en">NEWS</span><span class="zh">旭馳最新資訊</span></div>
+    <div class="count" id="count" aria-live="polite"></div>
+  </header>
+
+  <div id="stage"><div class="skel" aria-label="讀取中"></div></div>
+
+  <div class="nav" id="nav" hidden>
+    <button class="arrow" id="prev" aria-label="上一則">‹</button>
+    <div class="dots" id="dots" role="tablist" aria-label="選擇公告"></div>
+    <button class="arrow" id="next" aria-label="下一則">›</button>
+  </div>
+  <p class="sample" id="sample" hidden>※ 以下為範例內容，後台發布後會換成真正的公告</p>
+
+  <footer>旭馳車業｜02-2204-8272</footer>
+</div>
+
+<script>
+/* 後台 Apps Script「前台 API」部署網址（…/exec） */
+const API_URL = "https://script.google.com/macros/s/AKfycbwdTz4DcFqcX9n-b8AlSZghw6jCG6NgjjH7PYlfXVHTIzUQrxt6yVziCPfnm9GiYbYwJg/exec";
+
+const SAMPLE = [
+  { date: "2026-10-03", title: "中秋連假營業時間", body: "10/4（六）～10/6（一）正常營業，10/7（二）公休一天。\n連假出遊前，記得先來檢查胎壓、煞車和機油喔！", image: "" },
+  { date: "2026-09-25", title: "秋季保養優惠開跑", body: "即日起至 10/31，大保養加贈齒輪油更換。\n名額有限，歡迎用 LINE 預約。", image: "" },
+  { date: "2026-09-12", title: "颱風天出門前的 3 個檢查", body: "1. 輪胎紋路夠不夠深\n2. 煞車是否靈敏\n3. 大燈、方向燈是否正常\n淹水後的車子請不要直接發動，先聯絡我們。", image: "" }
+];
+
+const $ = id => document.getElementById(id);
+const stage = $("stage");
+
+function mdDate(s) {
+  const [y, m, d] = s.split("-").map(Number);
+  return `${m}月${d}日 發布`;
+}
+function isNew(s) {
+  const t = new Date(s + "T00:00:00+08:00").getTime();
+  return Date.now() - t < 7 * 864e5;
+}
+function placeholder(title) {
+  const c = document.createElement("canvas"); c.width = 800; c.height = 600;
+  const g = c.getContext("2d");
+  g.fillStyle = "#1c1c1c"; g.fillRect(0, 0, 800, 600);
+  g.strokeStyle = "rgba(255,138,0,.35)"; g.lineWidth = 26;
+  for (let x = -600; x < 800; x += 80) { g.beginPath(); g.moveTo(x, 600); g.lineTo(x + 600, 0); g.stroke(); }
+  g.fillStyle = "#ff8a00"; g.font = "900 64px 'Noto Sans TC', sans-serif"; g.textAlign = "center";
+  g.fillText(title.slice(0, 8), 400, 320);
+  return c.toDataURL("image/jpeg", .8);
+}
+
+function render(posts, sample) {
+  $("sample").hidden = !sample;
+  if (!posts.length) {
+    stage.innerHTML = '<div class="state"><b>NO NEWS</b>目前沒有新公告，過幾天再來看看！</div>';
+    $("count").textContent = ""; return;
+  }
+  const rail = document.createElement("div");
+  rail.className = "rail"; rail.id = "rail";
+  rail.setAttribute("aria-roledescription", "輪播");
+  posts.forEach((p, i) => {
+    const card = document.createElement("article");
+    card.className = "card";
+    card.setAttribute("aria-label", `第 ${i + 1} 則，共 ${posts.length} 則`);
+    card.innerHTML = `<div class="pic"><img alt="" loading="${i ? "lazy" : "eager"}"><span class="badge"></span></div>
+      <div class="txt"><h2></h2><p class="clip"></p><button class="more" hidden>看全文</button></div>`;
+    card.querySelector("img").src = p.image || placeholder(p.title);
+    card.querySelector(".badge").textContent = mdDate(p.date);
+    if (isNew(p.date)) { const n = document.createElement("span"); n.className = "new"; n.textContent = "NEW"; card.querySelector(".pic").appendChild(n); }
+    card.querySelector("h2").textContent = p.title;
+    const para = card.querySelector("p"); para.textContent = p.body;
+    const more = card.querySelector(".more");
+    requestAnimationFrame(() => { if (para.scrollHeight > para.clientHeight + 2) more.hidden = false; });
+    more.addEventListener("click", () => { para.classList.toggle("clip"); more.textContent = para.classList.contains("clip") ? "看全文" : "收起"; });
+    rail.appendChild(card);
+  });
+  stage.innerHTML = ""; stage.appendChild(rail);
+
+  const dots = $("dots"); dots.innerHTML = "";
+  posts.forEach((p, i) => {
+    const b = document.createElement("button");
+    b.setAttribute("aria-label", `第 ${i + 1} 則：${p.title}`);
+    b.addEventListener("click", () => go(i));
+    dots.appendChild(b);
+  });
+  $("nav").hidden = posts.length < 2;
+
+  let cur = 0;
+  function update() {
+    cur = Math.round(rail.scrollLeft / rail.clientWidth);
+    $("count").innerHTML = `<b>${String(cur + 1).padStart(2, "0")}</b> / ${String(posts.length).padStart(2, "0")}`;
+    [...dots.children].forEach((d, i) => d.setAttribute("aria-current", i === cur ? "true" : "false"));
+    $("prev").disabled = cur === 0; $("next").disabled = cur === posts.length - 1;
+  }
+  function go(i) { rail.scrollTo({ left: i * rail.clientWidth }); }
+  $("prev").onclick = () => go(cur - 1);
+  $("next").onclick = () => go(cur + 1);
+  rail.addEventListener("scroll", () => requestAnimationFrame(update), { passive: true });
+  rail.tabIndex = 0;
+  rail.addEventListener("keydown", e => { if (e.key === "ArrowRight") go(cur + 1); if (e.key === "ArrowLeft") go(cur - 1); });
+  update();
+}
+
+async function load() {
+  if (!API_URL) return render(SAMPLE, true);
+  try {
+    const r = await fetch(API_URL + "?api=posts");
+    const d = await r.json();
+    if (!d.ok) throw new Error();
+    render(d.posts || [], false);
+  } catch (e) {
+    stage.innerHTML = '<div class="state"><b>OOPS</b>公告暫時讀不到，請稍後再試。</div>';
+  }
+}
+load();
+</script>
+
+</body>
+</html>
