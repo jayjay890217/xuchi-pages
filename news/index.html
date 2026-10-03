@@ -135,7 +135,9 @@ function render(posts, sample) {
     card.setAttribute("aria-label", `第 ${i + 1} 則，共 ${posts.length} 則`);
     card.innerHTML = `<div class="pic"><img alt="" loading="${i ? "lazy" : "eager"}"><span class="badge"></span></div>
       <div class="txt"><h2></h2><p class="clip"></p><button class="more" hidden>看全文</button></div>`;
-    card.querySelector("img").src = p.image || placeholder(p.title);
+    const im = card.querySelector("img");
+    im.onerror = () => { im.onerror = null; im.src = placeholder(p.title); };
+    im.src = p.image || placeholder(p.title);
     card.querySelector(".badge").textContent = mdDate(p.date);
     if (isNew(p.date)) { const n = document.createElement("span"); n.className = "new"; n.textContent = "NEW"; card.querySelector(".pic").appendChild(n); }
     card.querySelector("h2").textContent = p.title;
