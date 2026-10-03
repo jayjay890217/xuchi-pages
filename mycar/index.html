@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="description" content="旭馳車業：查詢愛車維修紀錄">
+<title>我的愛車</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+TC:wght@500;700;900&display=swap">
+<style>
+/* Layout: a garage service-record lookup. A license-plate input styled like a real Taiwanese plate is the hero; results read as a service-log timeline (date · km · items). Single black/orange look by choice. */
+:root{
+  color-scheme: dark;
+  --bg:#0d0d0d;
+  --panel:#171717;
+  --line:#2b2b2b;
+  --org:#ff8a00;
+  --org2:#ffb35c;
+  --txt:#f3eee6;
+  --dim:#9d968b;
+  --bad:#ff6b5b;
+  --f-disp:"Bebas Neue","Impact","Arial Narrow",sans-serif;
+  --f-body:"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--txt);font-family:var(--f-body);font-size:16px;line-height:1.6;
+  background-image:repeating-linear-gradient(-45deg,rgba(255,138,0,.035) 0 14px,transparent 14px 28px)}
+.wrap{max-width:520px;margin:0 auto;padding-inline:16px;padding-block:20px 40px;display:flex;flex-direction:column;gap:18px}
+header{display:flex;align-items:flex-end;justify-content:space-between;border-bottom:3px solid var(--org);padding-bottom:8px}
+.brand{line-height:1}
+.brand .en{display:block;font-family:var(--f-disp);font-size:44px;letter-spacing:.06em;color:var(--org)}
+.brand .zh{display:block;font-weight:900;font-size:15px;letter-spacing:.3em;margin-top:2px}
+.shop{font-size:12px;color:var(--dim);font-weight:700;letter-spacing:.12em}
+
+/* search card */
+form{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:20px 18px 18px;display:flex;flex-direction:column;gap:14px;
+  box-shadow:0 0 0 1px rgba(255,138,0,.1),0 18px 40px rgba(0,0,0,.45)}
+.lbl{font-weight:900;font-size:14px;letter-spacing:.08em;color:var(--org2)}
+.plate{position:relative;background:#f4f1e8;border:4px solid #111;border-radius:12px;box-shadow:0 0 0 3px var(--org);padding:10px 12px 8px}
+.plate::before,.plate::after{content:"";position:absolute;top:50%;width:9px;height:9px;border-radius:50%;background:#555;transform:translateY(-50%)}
+.plate::before{left:8px}.plate::after{right:8px}
+.plate input{width:100%;border:0;background:transparent;text-align:center;font-family:var(--f-disp);font-size:clamp(40px,13vw,58px);letter-spacing:.08em;color:#111;line-height:1;padding:0;text-transform:uppercase}
+.plate input::placeholder{color:#bbb5a6}
+.plate input:focus{outline:none}
+.plate:focus-within{box-shadow:0 0 0 3px var(--org2),0 0 0 8px rgba(255,138,0,.25)}
+.phone{width:100%;background:#0f0f0f;color:var(--txt);border:2px solid var(--line);border-radius:12px;padding:12px 14px;font:inherit;font-size:20px;font-weight:700;letter-spacing:.08em;font-variant-numeric:tabular-nums}
+.phone:focus{outline:none;border-color:var(--org)}
+.go{border:0;border-radius:12px;background:var(--org);color:#111;font:inherit;font-weight:900;font-size:18px;letter-spacing:.1em;padding:14px;cursor:pointer;box-shadow:0 4px 0 #9b5200}
+.go:active{transform:translateY(3px);box-shadow:0 1px 0 #9b5200}
+.go:disabled{opacity:.6;cursor:wait}
+.err{color:var(--bad);font-weight:700;min-height:1.5em;margin:0}
+.note{font-size:12px;color:var(--dim);margin:0}
+:focus-visible{outline:3px solid var(--org2);outline-offset:3px}
+
+/* result */
+.car{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--org);color:#111;border-radius:16px;padding:14px 16px}
+.car .who{font-weight:900;font-size:18px}
+.car .model{font-size:14px;font-weight:700;opacity:.8}
+.car .pl{font-family:var(--f-disp);font-size:34px;letter-spacing:.06em;background:#111;color:var(--org);border-radius:8px;padding:2px 10px;white-space:nowrap}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px;text-align:center}
+.stat b{display:block;font-family:var(--f-disp);font-size:30px;line-height:1.1;color:var(--org);font-variant-numeric:tabular-nums;letter-spacing:.03em}
+.stat span{font-size:12px;color:var(--dim)}
+.log{list-style:none;margin:0;padding:0 0 0 18px;border-left:3px solid var(--org);display:flex;flex-direction:column;gap:14px}
+.log li{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 14px;min-width:0}
+.log li::before{content:"";position:absolute;left:-28px;top:16px;width:14px;height:14px;border-radius:50%;background:var(--bg);border:3px solid var(--org)}
+.row1{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.date{font-weight:900;font-size:17px}
+.km{font-family:var(--f-disp);font-size:22px;letter-spacing:.04em;color:var(--org2);font-variant-numeric:tabular-nums}
+.items{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:4px}
+.items li{all:unset;display:flex;justify-content:space-between;gap:10px;font-size:15px;border-top:1px dashed #333;padding-top:4px}
+.items .n{min-width:0;overflow-wrap:anywhere}
+.items .q{color:var(--dim);white-space:nowrap;font-variant-numeric:tabular-nums}
+.total{margin-top:6px;text-align:right;font-weight:900;color:var(--org2)}
+.empty{text-align:center;color:var(--dim);border:2px dashed var(--line);border-radius:14px;padding:24px}
+.again{background:none;border:2px solid var(--org);color:var(--org);border-radius:12px;padding:10px;font:inherit;font-weight:900;cursor:pointer}
+footer{text-align:center;font-size:12px;color:var(--dim)}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <header>
+    <div class="brand"><span class="en">MY RIDE</span><span class="zh">我的愛車</span></div>
+    <span class="shop">旭馳車業</span>
+  </header>
+
+  <form id="f" autocomplete="off" novalidate>
+    <span class="lbl">車牌號碼</span>
+    <label class="plate"><input id="plate" inputmode="text" maxlength="9" placeholder="ABC-1234" aria-label="車牌號碼" autocapitalize="characters" spellcheck="false"></label>
+    <label class="lbl" for="phone">手機號碼</label>
+    <input class="phone" id="phone" type="tel" inputmode="numeric" maxlength="12" placeholder="0912345678">
+    <p class="err" id="err" role="alert"></p>
+    <button class="go" id="go" type="submit">查詢維修紀錄</button>
+    <p class="note">請輸入留給旭馳的車牌與手機，兩者都相符才會顯示紀錄。</p>
+  </form>
+
+  <section id="res" hidden aria-live="polite"></section>
+
+  <footer>有問題請聯絡旭馳車業｜02-2204-8272</footer>
+</div>
+
+<script>
+/* 「旭馳我的愛車」Apps Script 部署網址（…/exec） */
+const API_URL = "https://script.google.com/macros/s/AKfycbx-EB6WdrQInf9z9EmB92bQ5FkKKDV1ZvJWuHZFZT8UsRFf0QBPYMMCPYX1XfhGGqhKrQ/exec";
+
+const $ = id => document.getElementById(id);
+
+function normPlate(v) {
+  const raw = String(v || "").toUpperCase().replace(/[\s_．.]/g, "").replace(/[－—–]/g, "-");
+  const clean = raw.replace(/[^A-Z0-9]/g, "");
+  const g = clean.match(/[A-Z]+|[0-9]+/g) || [];
+  return g.length === 2 ? g[0] + "-" + g[1] : (raw.replace(/[^A-Z0-9-]/g, "") || clean);
+}
+$("plate").addEventListener("blur", e => { e.target.value = normPlate(e.target.value); });
+try { const p = localStorage.getItem("xuchi_plate"); if (p) $("plate").value = p; } catch (e) {}
+
+const SAMPLE = {
+  ok: true, showPrice: false,
+  car: { name: "王先生", plate: "ABC-1234", brand: "SYM", model: "DRG 二代" },
+  orders: [
+    { date: "2026-09-18", km: 12480, items: [{ name: "機油", qty: 1 }, { name: "齒輪油", qty: 1 }, { name: "空氣濾清器", qty: 1 }] },
+    { date: "2026-07-02", km: 11350, items: [{ name: "機油", qty: 1 }, { name: "前輪胎", qty: 1, note: "原廠規格" }] },
+    { date: "2026-04-20", km: 10120, items: [{ name: "大保養", qty: 1 }] }
+  ]
+};
+
+function fmtDate(s) { const [y, m, d] = s.split("-"); return `${y}.${m}.${d}`; }
+function fmtKm(n) { return n ? n.toLocaleString("zh-TW") + " KM" : ""; }
+
+function show(d) {
+  const r = $("res"); r.innerHTML = ""; r.hidden = false;
+  const car = document.createElement("div"); car.className = "car";
+  car.innerHTML = '<div><div class="who"></div><div class="model"></div></div><div class="pl"></div>';
+  car.querySelector(".who").textContent = (d.car.name || "車主") + " 您好";
+  car.querySelector(".model").textContent = [d.car.brand, d.car.model].filter(Boolean).join(" ") || "　";
+  car.querySelector(".pl").textContent = d.car.plate;
+  r.appendChild(car);
+
+  const os = d.orders || [];
+  const kms = os.map(o => o.km).filter(Boolean);
+  const stats = document.createElement("div"); stats.className = "stats";
+  const last = os[0] ? fmtDate(os[0].date).slice(5) : "—";
+  stats.innerHTML = `<div class="stat"><b>${os.length}</b><span>進廠次數</span></div>
+    <div class="stat"><b>${kms.length ? Math.max(...kms).toLocaleString("zh-TW") : "—"}</b><span>最近里程 km</span></div>
+    <div class="stat"><b>${last}</b><span>上次進廠</span></div>`;
+  r.appendChild(stats);
+
+  if (!os.length) {
+    const e = document.createElement("div"); e.className = "empty"; e.textContent = "目前還沒有維修紀錄";
+    r.appendChild(e);
+  } else {
+    const ul = document.createElement("ul"); ul.className = "log";
+    os.forEach(o => {
+      const li = document.createElement("li");
+      li.innerHTML = '<div class="row1"><span class="date"></span><span class="km"></span></div><ul class="items"></ul>';
+      li.querySelector(".date").textContent = fmtDate(o.date);
+      li.querySelector(".km").textContent = fmtKm(o.km);
+      const items = li.querySelector(".items");
+      (o.items || []).forEach(it => {
+        const x = document.createElement("li");
+        x.innerHTML = '<span class="n"></span><span class="q"></span>';
+        x.querySelector(".n").textContent = it.name + (it.note ? `（${it.note}）` : "");
+        x.querySelector(".q").textContent = d.showPrice && it.price != null ? `$${it.price.toLocaleString("zh-TW")}` : `× ${it.qty}`;
+        items.appendChild(x);
+      });
+      if (d.showPrice && o.total) {
+        const t = document.createElement("div"); t.className = "total"; t.textContent = `合計 $${o.total.toLocaleString("zh-TW")}`;
+        li.appendChild(t);
+      }
+      ul.appendChild(li);
+    });
+    r.appendChild(ul);
+  }
+  const again = document.createElement("button"); again.className = "again"; again.textContent = "查詢其他車輛";
+  again.addEventListener("click", () => { r.hidden = true; $("f").hidden = false; $("phone").value = ""; $("plate").focus(); });
+  r.appendChild(again);
+  $("f").hidden = true;
+  window.scrollTo({ top: 0 });
+}
+
+$("f").addEventListener("submit", async ev => {
+  ev.preventDefault();
+  const plate = normPlate($("plate").value);
+  const phone = $("phone").value.replace(/\D/g, "");
+  $("plate").value = plate;
+  if (plate.replace(/-/g, "").length < 4) return ($("err").textContent = "請輸入車牌號碼");
+  if (!/^09\d{8}$/.test(phone)) return ($("err").textContent = "請輸入 09 開頭的 10 碼手機號碼");
+  $("err").textContent = "";
+
+  if (!API_URL) return show(SAMPLE);
+
+  $("go").disabled = true; $("go").textContent = "查詢中…";
+  try {
+    const res = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ plate, phone })
+    });
+    const d = await res.json();
+    if (!d.ok) { $("err").textContent = d.error || "查詢失敗"; return; }
+    try { localStorage.setItem("xuchi_plate", plate); } catch (e) {}
+    show(d);
+  } catch (e) {
+    $("err").textContent = "連線失敗，請稍後再試";
+  } finally {
+    $("go").disabled = false; $("go").textContent = "查詢維修紀錄";
+  }
+});
+</script>
+
+</body>
+</html>
