@@ -124,6 +124,17 @@ async function openOne(id) {
   catch (e) { if (e.code === "BAD_PIN") return showLogin(e.message); m.innerHTML = `<div class="empty">${esc(e.message)}</div>`; }
 }
 
+const imgCache = {};
+function loadImgs(id) {
+  ["front", "back", "sign"].forEach(w => {
+    const el = $("im-" + w); if (!el) return;
+    const key = id + w;
+    if (imgCache[key]) { el.src = imgCache[key]; return; }
+    el.style.minHeight = "80px";
+    api("img", { id, which: w }).then(d => { if (d.data) { imgCache[key] = d.data; const e2 = $("im-" + w); if (e2) e2.src = d.data; } }).catch(() => {});
+  });
+}
+
 function render(r, fleet) {
   const m = $("v-main");
   const kv = rows => `<dl class="kv">${rows.filter(x => x[1]).map(x => `<dt>${x[0]}</dt><dd>${esc(x[1])}</dd>`).join("")}</dl>`;
@@ -132,9 +143,9 @@ function render(r, fleet) {
     ${kv([["姓名", r.name], ["LINE 名稱", r.displayName], ["身分證字號", r.idNo], ["手機", r.phone], ["維修車牌", r.repairPlate], ["申請時間", r.appliedAt],
           ["代步車牌", r.loanerPlate], ["店家備註", r.note], ["核准時間", r.approvedAt], ["申請還車", r.returnReqAt], ["顧客還車備註", r.returnReqNote],
           ["還車完成", r.returnedAt], ["還車店家備註", r.returnNote]])}
-    <div class="pics">${r.images.front ? `<img src="${r.images.front}" alt="駕照正面">` : ""}${r.images.back ? `<img src="${r.images.back}" alt="駕照反面">` : ""}</div>
-    ${r.images.sign ? `<div class="sign"><img src="${r.images.sign}" alt="簽名"></div>` : ""}
-    ${r.pdf ? `<a href="${esc(r.pdf)}" target="_blank" rel="noopener">開啟合約 PDF（需登入 xcgssystem）↗</a>` : ""}
+    <div class="pics"><img id="im-front" alt="駕照正面"><img id="im-back" alt="駕照反面"></div>
+    <div class="sign"><img id="im-sign" alt="簽名"></div>
+    ${r.pdf ? `<a href="${esc(r.pdf)}" target="_blank" rel="noopener">開啟合約 PDF（需登入 xcgssystem）↗</a>` : `<span style="color:var(--dim);font-size:13px">合約 PDF 產生中，約 1 分鐘後重新整理即可看到</span>`}
   </div>`;
 
   if (r.status === "申請中") {
@@ -150,6 +161,7 @@ function render(r, fleet) {
   }
   html += `<button class="btn ghost" id="toList" type="button">← 所有進行中的申請</button>`;
   m.innerHTML = html;
+  loadImgs(r.id);
   $("toList").addEventListener("click", () => { history.pushState("", "", location.pathname); openList(); });
 
   const f = $("act"); if (!f) return;
