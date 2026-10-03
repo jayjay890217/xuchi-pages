@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>代步車審核</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+TC:wght@500;700;900&display=swap">
+<style>
+:root{
+  color-scheme: dark;
+  --bg:#0d0d0d; --panel:#171717; --line:#2b2b2b; --org:#ff8a00; --org2:#ffb35c;
+  --txt:#f3eee6; --dim:#9d968b; --bad:#ff6b5b; --ok:#5fd38a;
+  --f-disp:"Bebas Neue","Impact","Arial Narrow",sans-serif;
+  --f-body:"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--txt);font-family:var(--f-body);font-size:16px;line-height:1.6}
+.wrap{max-width:560px;margin:0 auto;padding-inline:16px;padding-block:18px 48px;display:flex;flex-direction:column;gap:16px}
+header{display:flex;align-items:flex-end;justify-content:space-between;border-bottom:3px solid var(--org);padding-bottom:8px;gap:8px}
+.brand{line-height:1}
+.brand .en{display:block;font-family:var(--f-disp);font-size:38px;letter-spacing:.06em;color:var(--org)}
+.brand .zh{display:block;font-weight:900;font-size:14px;letter-spacing:.25em;margin-top:2px}
+.tag{font-size:12px;font-weight:900;background:#2a1a06;color:var(--org);border:1px solid var(--org);border-radius:6px;padding:2px 8px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.card h2{margin:0;font-size:17px;color:var(--org2)}
+input,textarea{width:100%;background:#0f0f0f;color:var(--txt);border:2px solid var(--line);border-radius:10px;padding:11px 12px;font:inherit;font-size:17px}
+input:focus,textarea:focus{outline:none;border-color:var(--org)}
+.pin{font-family:var(--f-disp);font-size:34px;letter-spacing:.3em;text-align:center}
+label.f{display:flex;flex-direction:column;gap:4px;font-weight:700;font-size:14px}
+.btn{border:0;border-radius:12px;background:var(--org);color:#111;font:inherit;font-weight:900;font-size:18px;padding:13px;cursor:pointer;width:100%;box-shadow:0 4px 0 #9b5200}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 #9b5200}
+.btn:disabled{opacity:.55;cursor:wait}
+.btn.ghost{background:transparent;color:var(--org);border:2px solid var(--org);box-shadow:none;font-size:15px;padding:9px}
+.msg{font-weight:700;margin:0;min-height:1.4em}
+.msg.err{color:var(--bad)} .msg.ok{color:var(--ok)}
+.state{display:inline-block;font-weight:900;border-radius:8px;padding:2px 10px;font-size:14px}
+.s-申請中{background:var(--org);color:#111}
+.s-借出中{background:#1f3b2a;color:var(--ok)}
+.s-還車申請中{background:#3a2a0a;color:var(--org2);border:1px solid var(--org)}
+.s-已還車,.s-已取消{background:#2b2b2b;color:var(--dim)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:15px;margin:0}
+.kv dt{color:var(--dim)} .kv dd{margin:0;font-weight:700;overflow-wrap:anywhere}
+.pics{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.pics img{width:100%;border-radius:8px;border:1px solid var(--line);background:#000}
+.sign{background:#fff;border-radius:8px;padding:6px;max-width:100%}
+.sign img{width:100%;max-height:120px;object-fit:contain;display:block}
+.list{display:flex;flex-direction:column;gap:8px}
+.row{all:unset;cursor:pointer;display:grid;grid-template-columns:1fr auto;gap:4px 10px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px}
+.row:focus-visible{outline:3px solid var(--org2)}
+.row .t{font-weight:900}
+.row .d{font-size:13px;color:var(--dim);grid-column:1/-1}
+.empty{color:var(--dim);text-align:center;padding:24px;border:2px dashed var(--line);border-radius:12px}
+a{color:var(--org)}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand"><span class="en">LOANER DESK</span><span class="zh">代步車審核</span></div>
+    <span class="tag">店家專用</span>
+  </header>
+
+  <form id="v-login" class="card" hidden>
+    <h2>輸入店家密碼</h2>
+    <input class="pin" id="pin" type="password" inputmode="numeric" autocomplete="current-password" aria-label="店家密碼">
+    <p class="msg err" id="l-msg" role="alert"></p>
+    <button class="btn" type="submit">進入</button>
+  </form>
+
+  <div id="v-main" hidden style="display:flex;flex-direction:column;gap:16px"></div>
+</div>
+
+<script>
+const API_URL = "https://script.google.com/macros/s/AKfycbwFnh-qXUYky1Ltj6gFHNlSeWi3Hfc3-Rg3rgL08-8kbIooHWIXBCEQATrKVNDOnz6xpA/exec";
+const $ = id => document.getElementById(id);
+let pin = "";
+try { pin = sessionStorage.getItem("xuchi_pin") || ""; } catch (e) {}
+
+async function api(action, payload) {
+  const res = await fetch(API_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify(Object.assign({ action, pin }, payload || {})) });
+  const d = await res.json();
+  if (!d.ok) { const e = new Error(d.error || "伺服器錯誤"); e.code = d.code; throw e; }
+  return d;
+}
+function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
+function showLogin(msg) { $("v-main").hidden = true; $("v-login").hidden = false; $("l-msg").textContent = msg || ""; $("pin").focus(); }
+
+$("v-login").addEventListener("submit", async e => {
+  e.preventDefault(); pin = $("pin").value.trim();
+  try { await api("login"); try { sessionStorage.setItem("xuchi_pin", pin); } catch (e) {} $("v-login").hidden = true; route(); }
+  catch (err) { showLogin(err.message); }
+});
+
+function route() {
+  const id = location.hash.replace(/^#/, "");
+  id ? openOne(id) : openList();
+}
+window.addEventListener("hashchange", route);
+
+async function openList() {
+  const m = $("v-main"); m.hidden = false; m.innerHTML = '<div class="empty">讀取中…</div>';
+  try {
+    const d = await api("list");
+    m.innerHTML = '<div class="card"><h2>進行中的代步車</h2><div class="list" id="lst"></div></div>';
+    const box = $("lst");
+    if (!d.list.length) { box.innerHTML = '<div class="empty">目前沒有進行中的申請</div>'; return; }
+    d.list.forEach(x => {
+      const b = document.createElement("button"); b.className = "row";
+      b.innerHTML = `<span class="t">${esc(x.name)}｜${esc(x.repairPlate)}</span><span class="state s-${esc(x.status)}">${esc(x.status)}</span>
+        <span class="d">${esc(x.id)}　${esc(x.appliedAt)}${x.loanerPlate ? "　代步車 " + esc(x.loanerPlate) : ""}</span>`;
+      b.addEventListener("click", () => location.hash = x.id);
+      box.appendChild(b);
+    });
+  } catch (e) { if (e.code === "BAD_PIN") return showLogin(e.message); m.innerHTML = `<div class="empty">${esc(e.message)}</div>`; }
+}
+
+async function openOne(id) {
+  const m = $("v-main"); m.hidden = false; m.innerHTML = '<div class="empty">讀取申請資料…</div>';
+  try { const d = await api("get", { id }); render(d.record, d.fleet); }
+  catch (e) { if (e.code === "BAD_PIN") return showLogin(e.message); m.innerHTML = `<div class="empty">${esc(e.message)}</div>`; }
+}
+
+function render(r, fleet) {
+  const m = $("v-main");
+  const kv = rows => `<dl class="kv">${rows.filter(x => x[1]).map(x => `<dt>${x[0]}</dt><dd>${esc(x[1])}</dd>`).join("")}</dl>`;
+  let html = `<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+      <h2>申請 ${esc(r.id)}</h2><span class="state s-${esc(r.status)}">${esc(r.status)}</span></div>
+    ${kv([["姓名", r.name], ["LINE 名稱", r.displayName], ["身分證字號", r.idNo], ["手機", r.phone], ["維修車牌", r.repairPlate], ["申請時間", r.appliedAt],
+          ["代步車牌", r.loanerPlate], ["店家備註", r.note], ["核准時間", r.approvedAt], ["申請還車", r.returnReqAt], ["顧客還車備註", r.returnReqNote],
+          ["還車完成", r.returnedAt], ["還車店家備註", r.returnNote]])}
+    <div class="pics">${r.images.front ? `<img src="${r.images.front}" alt="駕照正面">` : ""}${r.images.back ? `<img src="${r.images.back}" alt="駕照反面">` : ""}</div>
+    ${r.images.sign ? `<div class="sign"><img src="${r.images.sign}" alt="簽名"></div>` : ""}
+    ${r.pdf ? `<a href="${esc(r.pdf)}" target="_blank" rel="noopener">開啟合約 PDF（需登入 xcgssystem）↗</a>` : ""}
+  </div>`;
+
+  if (r.status === "申請中") {
+    html += `<form class="card" id="act"><h2>核准借出</h2>
+      <label class="f">代步車車牌<input id="loaner" list="fleet" autocapitalize="characters" placeholder="例如 MAA-1234" required></label>
+      <datalist id="fleet">${(fleet || []).map(f => `<option value="${esc(f.plate)}">${esc(f.note)}</option>`).join("")}</datalist>
+      <label class="f">備註（會傳給顧客，選填）<textarea id="note" rows="2" maxlength="200" placeholder="例如：油量半格，預計週五取車"></textarea></label>
+      <p class="msg" id="a-msg" role="status"></p><button class="btn" id="go">核准並通知顧客「申請已成功」</button></form>`;
+  } else if (r.status === "借出中" || r.status === "還車申請中") {
+    html += `<form class="card" id="act"><h2>${r.status === "借出中" ? "代步車借出中（顧客尚未申請還車）" : "確認還車"}</h2>
+      <label class="f">備註（會傳給顧客，選填）<textarea id="note" rows="2" maxlength="200" placeholder="例如：車況良好，感謝使用"></textarea></label>
+      <p class="msg" id="a-msg" role="status"></p><button class="btn" id="go">確認還車並通知顧客「還車成功」</button></form>`;
+  }
+  html += `<button class="btn ghost" id="toList" type="button">← 所有進行中的申請</button>`;
+  m.innerHTML = html;
+  $("toList").addEventListener("click", () => { history.pushState("", "", location.pathname); openList(); });
+
+  const f = $("act"); if (!f) return;
+  f.addEventListener("submit", async e => {
+    e.preventDefault();
+    const go = $("go"), msg = $("a-msg");
+    go.disabled = true; msg.className = "msg"; msg.textContent = "處理中…";
+    try {
+      const d = r.status === "申請中"
+        ? await api("approve", { id: r.id, loanerPlate: $("loaner").value, note: $("note").value })
+        : await api("confirmReturn", { id: r.id, note: $("note").value });
+      render(d.record, fleet);
+      const p = document.createElement("p"); p.className = "msg " + (d.pushed ? "ok" : "err");
+      p.textContent = d.pushed ? "✅ 已完成，並已傳 LINE 通知顧客" : "已完成，但 LINE 通知沒有送出（請檢查 LINE token 或手動告知顧客）";
+      $("v-main").prepend(p);
+    } catch (err) {
+      if (err.code === "BAD_PIN") return showLogin(err.message);
+      msg.className = "msg err"; msg.textContent = err.message; go.disabled = false;
+    }
+  });
+}
+
+if (API_URL.startsWith("PASTE_")) { $("v-main").hidden = false; $("v-main").innerHTML = '<div class="empty">系統尚未設定完成</div>'; }
+else if (!pin) showLogin();
+else { api("login").then(route).catch(e => showLogin(e.message)); }
+</script>
+</body>
+</html>
