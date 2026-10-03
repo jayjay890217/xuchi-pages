@@ -75,6 +75,12 @@ form{background:var(--panel);border:1px solid var(--line);border-radius:18px;pad
 .total{margin-top:6px;text-align:right;font-weight:900;color:var(--org2)}
 .empty{text-align:center;color:var(--dim);border:2px dashed var(--line);border-radius:14px;padding:24px}
 .again{background:none;border:2px solid var(--org);color:var(--org);border-radius:12px;padding:10px;font:inherit;font-weight:900;cursor:pointer}
+.multi-tip{margin:0;font-size:14px;font-weight:700;color:var(--org2)}
+.switch{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin-inline:-16px;padding-inline:16px;padding-block:2px}
+.switch::-webkit-scrollbar{display:none}
+.chip{flex:0 0 auto;font-family:var(--f-disp);font-size:24px;letter-spacing:.06em;line-height:1;padding:8px 14px 6px;border-radius:10px;
+  border:2px solid var(--org);background:#111;color:var(--org);cursor:pointer}
+.chip[aria-selected="true"]{background:var(--org);color:#111;box-shadow:3px 3px 0 #000}
 footer{text-align:center;font-size:12px;color:var(--dim)}
 [hidden]{display:none!important}
 </style>
@@ -131,8 +137,34 @@ const SAMPLE = {
 function fmtDate(s) { const [y, m, d] = s.split("-"); return `${y}.${m}.${d}`; }
 function fmtKm(n) { return n ? n.toLocaleString("zh-TW") + " KM" : ""; }
 
-function show(d) {
+let lastData = null;
+
+function show(d, idx) {
+  lastData = d;
+  const cars = (d.cars && d.cars.length) ? d.cars : [Object.assign({}, d.car, { orders: d.orders })];
+  const i = Math.min(idx || 0, cars.length - 1);
   const r = $("res"); r.innerHTML = ""; r.hidden = false;
+
+  if (cars.length > 1) {
+    const tip = document.createElement("p"); tip.className = "multi-tip";
+    tip.textContent = `您名下共有 ${cars.length} 台車，點車牌切換`;
+    r.appendChild(tip);
+    const sw = document.createElement("div"); sw.className = "switch"; sw.setAttribute("role", "tablist");
+    cars.forEach((c, k) => {
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "chip"; b.setAttribute("role", "tab");
+      b.setAttribute("aria-selected", k === i ? "true" : "false");
+      b.textContent = c.plate;
+      b.addEventListener("click", () => show(lastData, k));
+      sw.appendChild(b);
+    });
+    r.appendChild(sw);
+  }
+  renderCar(r, cars[i], d.showPrice);
+}
+
+function renderCar(r, c, showPrice) {
+  const d = { car: c, orders: c.orders || [], showPrice: showPrice };
   const car = document.createElement("div"); car.className = "car";
   car.innerHTML = '<div><div class="who"></div><div class="model"></div></div><div class="pl"></div>';
   car.querySelector(".who").textContent = (d.car.name || "車主") + " 您好";
