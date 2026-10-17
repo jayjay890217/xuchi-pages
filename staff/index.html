@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#111111">
+  <meta name="robots" content="noindex,nofollow">
+  <title>旭馳員工綁定</title>
+  <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <style>
+    :root { --bg:#111; --card:#1d1d1d; --field:#2b2b2b; --line:#444; --text:#fff; --muted:#aaa; --brand:#ff6a00; --brand-soft:#ffb066; --err:#ff5c5c; }
+    * { box-sizing: border-box; }
+    body { font-family:-apple-system,"PingFang TC","Noto Sans TC","Microsoft JhengHei",Arial,sans-serif; background:var(--bg); color:var(--text); margin:0; padding:20px 16px calc(20px + env(safe-area-inset-bottom)); -webkit-text-size-adjust:100%; }
+    .box { max-width:520px; margin:auto; background:var(--card); padding:24px 20px; border-radius:16px; border-top:5px solid var(--brand); }
+    h1 { margin:0 0 4px; font-size:22px; }
+    .sub { color:var(--muted); margin-bottom:20px; }
+    label { display:block; margin:16px 0 6px; font-size:15px; }
+    input { width:100%; padding:14px; border-radius:8px; border:1px solid var(--line); background:var(--field); color:var(--text); font-size:18px; letter-spacing:2px; text-transform:uppercase; text-align:center; -webkit-appearance:none; appearance:none; }
+    input:focus { outline:none; border-color:var(--brand); }
+    button { width:100%; margin-top:20px; padding:15px; border:none; border-radius:8px; background:var(--brand); color:#fff; font-size:17px; font-weight:bold; cursor:pointer; }
+    button:disabled { opacity:.5; cursor:default; }
+    #status { margin-top:14px; font-size:14px; color:var(--brand-soft); min-height:1em; text-align:center; }
+    #status.err { color:var(--err); }
+    .center { text-align:center; padding:28px 0 8px; }
+    .spinner { width:34px; height:34px; border:3px solid #333; border-top-color:var(--brand); border-radius:50%; margin:0 auto 14px; animation:spin .8s linear infinite; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    .big-icon { font-size:48px; margin-bottom:8px; }
+    .tip { margin-top:14px; font-size:13px; color:var(--muted); line-height:1.6; text-align:center; }
+    [hidden] { display:none !important; }
+  </style>
+</head>
+<body>
+<div class="box">
+  <h1>旭馳車業｜員工專區</h1>
+  <div class="sub">員工身分驗證</div>
+
+  <section id="view-loading" class="center"><div class="spinner"></div><div>載入中…</div></section>
+
+  <section id="view-error" class="center" hidden>
+    <div class="big-icon">⚠️</div>
+    <div id="error-text">發生錯誤</div>
+    <button onclick="location.reload()">重新整理</button>
+  </section>
+
+  <section id="view-form" hidden>
+    <form id="form" novalidate>
+      <label for="serial">請輸入老闆給你的員工序號</label>
+      <input id="serial" placeholder="XC-XXXX-XXXX" autocomplete="off" autocapitalize="characters" maxlength="20">
+      <button type="submit" id="submit">驗證並綁定</button>
+      <div id="status"></div>
+      <div class="tip">序號只能使用一次，綁定後這個 LINE 帳號就是你的員工身分。<br>沒有序號請洽老闆。</div>
+    </form>
+  </section>
+
+  <section id="view-done" class="center" hidden>
+    <div class="big-icon">✅</div>
+    <div id="done-title" style="font-size:18px;font-weight:bold;"></div>
+    <div id="done-msg" class="tip"></div>
+    <button id="close-btn">關閉</button>
+  </section>
+</div>
+
+<script>
+const CONFIG = {
+  LIFF_ID: "2012066437-WOfMcRM3",
+  // 員工綁定 Apps Script 部署後的「網頁應用程式」網址（…/exec）
+  API_URL: "https://script.google.com/macros/s/AKfycbyB4WHZhAAKkXlpJADqooRXtjiOtG92FCNq-a7lMjb5TJHR7wiJJfMK_k1qX7QO6mY/exec"
+};
+
+const $ = (id) => document.getElementById(id);
+let idToken = null;
+let submitting = false;
+
+function show(view) { ["loading","error","form","done"].forEach(v => { $("view-" + v).hidden = (v !== view); }); }
+function fail(msg) { $("error-text").textContent = msg; show("error"); }
+function setStatus(msg, isErr) { $("status").textContent = msg || ""; $("status").className = isErr ? "err" : ""; }
+
+async function api(action, payload) {
+  let res, text;
+  try {
+    res = await fetch(CONFIG.API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(Object.assign({ action, idToken }, payload || {}))
+    });
+    text = await res.text();
+  } catch (e) { const err = new Error("連線失敗"); err.detail = true; throw err; }
+  let data;
+  try { data = JSON.parse(text); } catch (e) { const err = new Error("伺服器回應異常"); err.detail = true; throw err; }
+  if (!data.ok) { const err = new Error(data.error || "伺服器錯誤"); err.code = data.code; throw err; }
+  return data;
+}
+
+function showDone(name, already, menu) {
+  $("done-title").textContent = already ? name + "，你已經是員工了" : "歡迎 " + name + "，綁定成功";
+  $("done-msg").textContent = menu
+    ? "員工選單已解鎖，關閉後回到聊天室就能看到。若選單沒換，請把聊天室關掉再重開。"
+    : "綁定已完成，但選單暫時沒換成功，請告訴老闆。";
+  $("close-btn").hidden = !liff.isInClient();
+  show("done");
+}
+
+async function main() {
+  if (CONFIG.API_URL.startsWith("PASTE_")) return fail("系統尚未設定完成（缺少 API_URL）。");
+  try { await liff.init({ liffId: CONFIG.LIFF_ID }); }
+  catch (e) { console.error(e); return fail("LINE 初始化失敗，請從官方帳號選單重新開啟。"); }
+
+  if (!liff.isLoggedIn()) { liff.login({ redirectUri: location.href }); return; }
+  idToken = liff.getIDToken();
+  if (!idToken) return fail("無法取得 LINE 身分，請確認 LIFF 已開啟 openid 權限。");
+
+  try {
+    const r = await api("get");
+    if (r.staff) return showDone(r.staff.name, true, true);
+  } catch (e) {
+    if (e.code === "TOKEN_EXPIRED") { liff.logout(); liff.login({ redirectUri: location.href }); return; }
+    console.error(e);
+  }
+  show("form");
+}
+
+$("form").addEventListener("submit", async (ev) => {
+  ev.preventDefault();
+  if (submitting) return;
+  const serial = $("serial").value.trim();
+  if (!serial) { setStatus("請輸入序號", true); return; }
+
+  submitting = true; $("submit").disabled = true; setStatus("驗證中…");
+  try {
+    const r = await api("bind", { serial });
+    setStatus("");
+    showDone(r.staff.name, r.already, r.menu === true);
+  } catch (e) {
+    if (e.code === "TOKEN_EXPIRED") { liff.logout(); liff.login({ redirectUri: location.href }); return; }
+    setStatus("❌ " + (e.detail ? "連線不穩，請再按一次" : e.message), true);
+  } finally {
+    submitting = false; $("submit").disabled = false;
+  }
+});
+
+$("close-btn").addEventListener("click", () => liff.closeWindow());
+main();
+</script>
+</body>
+</html>
