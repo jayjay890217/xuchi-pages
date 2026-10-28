@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>旭馳｜客人資料</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: -apple-system, "Noto Sans TC", "Microsoft JhengHei", sans-serif; background: #f4f4f4; color: #222; }
+    .wrap { max-width: 600px; margin: 0 auto; padding: 16px; }
+    .head { background: #F57C00; color: #fff; border-radius: 12px 12px 0 0; padding: 18px 20px; }
+    .head h1 { margin: 0; font-size: 22px; }
+    .head .sub { font-size: 13px; opacity: .9; margin-top: 4px; }
+    .card { background: #fff; border-radius: 0 0 12px 12px; padding: 8px 20px 20px; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+    .card.solo { border-radius: 12px; padding: 24px 20px; }
+    .row { display: flex; padding: 11px 0; border-bottom: 1px solid #eee; }
+    .label { width: 110px; flex-shrink: 0; color: #888; font-size: 14px; }
+    .value { flex: 1; font-size: 16px; white-space: pre-wrap; word-break: break-word; }
+    .photos img { width: 100%; border-radius: 8px; margin-top: 6px; background: #eee; display: block; }
+    .photos .cap { font-size: 14px; font-weight: 700; color: #555; margin-top: 16px; }
+    .actions { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+    .actions a, .actions button { flex: 1; min-width: 120px; text-align: center; padding: 14px; border-radius: 10px; font-size: 16px; font-weight: 700; text-decoration: none; color: #fff; background: #F57C00; border: 0; cursor: pointer; }
+    .actions .map { background: #1a73e8; }
+    input { width: 100%; padding: 12px; font-size: 18px; border: 1px solid #ccc; border-radius: 8px; margin: 10px 0 14px; }
+    .pinbtn { width: 100%; padding: 14px; font-size: 17px; font-weight: 700; color: #fff; background: #F57C00; border: 0; border-radius: 10px; }
+    .pinbtn:disabled { background: #9e9e9e; }
+    .err { color: #b71c1c; margin-top: 10px; min-height: 1em; }
+    .hidden { display: none !important; }
+    .tabs { display: flex; gap: 8px; margin-bottom: 12px; }
+    .tabs button { flex: 1; padding: 12px; font-size: 16px; font-weight: 700; border: 2px solid #F57C00; border-radius: 10px; background: #fff; color: #F57C00; cursor: pointer; }
+    .tabs button.on { background: #F57C00; color: #fff; }
+    .back { background: none; border: 0; color: #F57C00; font-size: 16px; font-weight: 700; padding: 4px 0 12px; cursor: pointer; }
+    .listhead { font-size: 15px; color: #555; margin: 4px 0 0; }
+    .item { padding: 14px; border: 1px solid #eee; border-radius: 10px; margin-top: 10px; cursor: pointer; background: #fafafa; }
+    .item:hover { border-color: #F57C00; }
+    .item b { font-size: 17px; }
+    .item .meta { font-size: 13px; color: #777; margin-top: 3px; }
+    .item .tag { display: inline-block; font-size: 12px; color: #fff; background: #1565C0; border-radius: 4px; padding: 1px 6px; margin-left: 6px; vertical-align: 2px; }
+    .empty { text-align: center; color: #888; padding: 30px 0; }
+    /* 讀取中轉圈 */
+    .spin { display: inline-block; width: 18px; height: 18px; border: 3px solid rgba(245,124,0,.25); border-top-color: #F57C00; border-radius: 50%; animation: spin .8s linear infinite; vertical-align: -4px; margin-right: 8px; }
+    .pinbtn .spin { border-color: rgba(255,255,255,.35); border-top-color: #fff; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .photos .ph { height: 180px; border-radius: 8px; margin-top: 6px; background: #eee; display: flex; align-items: center; justify-content: center; color: #888; font-size: 14px; }
+    .loadbar { text-align: center; color: #555; padding: 18px 0; }
+    /* 點照片放大 */
+    .photos img { cursor: zoom-in; }
+    .photos .tip { font-size: 12px; color: #999; margin-top: 4px; }
+    #zoom { position: fixed; inset: 0; z-index: 99; background: #000; display: flex; flex-direction: column; }
+    #zoom .zbar { display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: #111; color: #fff; }
+    #zoom .zcap { flex: 1; font-size: 15px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    #zoom .zbar button { padding: 9px 14px; font-size: 15px; font-weight: 700; border: 0; border-radius: 8px; color: #fff; background: #F57C00; cursor: pointer; }
+    #zoom .zbar .zclose { background: #555; }
+    #zoom .zbox { flex: 1; overflow: auto; display: flex; }
+    #zoom .zbox img { margin: auto; max-width: 100%; max-height: 100%; cursor: zoom-in; }
+    #zoom.big .zbox img { max-width: none; max-height: none; cursor: zoom-out; }
+    #zoom .zmsg { color: #ffcc80; font-size: 13px; padding: 6px 12px; background: #111; }
+    #zoom .zext { display: inline-block; margin-top: 8px; padding: 9px 14px; border-radius: 8px; background: #1a73e8; color: #fff; font-size: 15px; font-weight: 700; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div id="gate" class="card solo">
+      <h2 style="margin-top:0">🔒 旭馳｜客人資料</h2>
+      <div>請輸入你的經銷商密碼</div>
+      <input id="pin" type="password" inputmode="numeric" autocomplete="off" onkeydown="if(event.key==='Enter')unlock()">
+      <button id="pinbtn" class="pinbtn" onclick="unlock()">查看</button>
+      <div id="err" class="err"></div>
+    </div>
+
+    <div id="tabs" class="tabs hidden">
+      <button id="tabOne" onclick="showDetail()">這筆資料</button>
+      <button id="tabList" onclick="showHistory()">📋 歷史紀錄</button>
+    </div>
+
+    <!-- 歷史紀錄 -->
+    <div id="history" class="hidden">
+      <div class="card solo">
+        <div class="listhead" id="listHead">讀取中…</div>
+        <input id="search" placeholder="搜尋姓名、車款" oninput="renderList()">
+        <div id="list"></div>
+      </div>
+    </div>
+
+    <!-- 單筆資料 -->
+    <div id="detail" class="hidden">
+      <button id="back" class="back hidden" onclick="showHistory()">← 回歷史紀錄</button>
+      <div class="head">
+        <h1 id="hName"></h1>
+        <div class="sub" id="hSub"></div>
+      </div>
+      <div class="card">
+        <div id="rows"></div>
+        <div id="photos" class="photos"></div>
+        <div class="actions">
+          <a id="map" class="map" target="_blank">📍 地圖</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 照片放大 -->
+  <div id="zoom" class="hidden">
+    <div class="zbar">
+      <button class="zclose" onclick="closeZoom()">✕ 關閉</button>
+      <div class="zcap" id="zcap"></div>
+      <button onclick="downloadPhoto()">⬇️ 下載</button>
+    </div>
+    <div id="zmsg" class="zmsg hidden"></div>
+    <div class="zbox" onclick="if(event.target.tagName==='IMG')document.getElementById('zoom').classList.toggle('big')">
+      <img id="zimg" alt="">
+    </div>
+  </div>
+
+<script>
+  /*
+   * 經銷商頁（dealer.xuchi-moto.com）：跟 Apps Script 的 View.html 一樣，
+   * 只是放在自己的網域，資料用 fetch 向 Apps Script 拿（不帶 Google 登入），
+   * 手機瀏覽器登入好幾個 Google 帳號也打得開，下載照片也能用。
+   * 程式來源：apps-script\View.html；改 View.html 時這裡也要一起改。
+   */
+  const API_URL = 'https://script.google.com/macros/s/AKfycbwU884oQ4ycq4G-zH0DgqcxWpi07Ab6DKw95k1Uhcw64vHKUUjjPmSE6vW1KdBEU7zV/exec';
+  const RECORD_ID = (new URLSearchParams(location.search).get('id') || '').replace(/[^0-9a-f]/g, '').slice(0, 32);
+  const WEBAPP_URL = location.origin + location.pathname;
+
+  /** 向 Apps Script 拿資料（doPost 的 dealerApi_） */
+  function callApi(body) {
+    return fetch(API_URL, { method: 'POST', body: JSON.stringify(body) })
+      .catch(() => { throw new Error('連不上，請檢查網路後再試一次'); })
+      .then(res => {
+        if (!res.ok) throw new Error('連線失敗（' + res.status + '），請再試一次');
+        return res.json().catch(() => { throw new Error('讀取失敗，請再試一次'); });
+      })
+      .then(j => {
+        if (!j.ok) throw new Error(j.error);
+        return j.data;
+      });
+  }
+
+  /** 讓下面的程式照舊寫 google.script.run…（跟 View.html 一樣） */
+  const API = {
+    getRecordForDealer: (id, pin) => ({ api: 'record', id: id, pin: pin }),
+    getDealerHistory: pin => ({ api: 'history', pin: pin }),
+    getDealerPhoto: (id, pin, fileId) => ({ api: 'photo', id: id, pin: pin, fileId: fileId })
+  };
+  const google = { script: { get run() {
+    let ok = () => {}, fail = () => {};
+    const runner = {
+      withSuccessHandler(f) { ok = f; return runner; },
+      withFailureHandler(f) { fail = f; return runner; }
+    };
+    Object.keys(API).forEach(name => {
+      runner[name] = (...args) => { callApi(API[name](...args)).then(ok, fail); };
+    });
+    return runner;
+  } } };
+  const PIN_KEY = 'xuchi_dealer_view_pin';
+  /** 要顯示的欄位：[名稱, 值, 空的就不顯示]（出生日期、住址、代號是第 8 版以前的舊欄位） */
+  function rowsFor(r) {
+    const plate = r.plateMode === '選號' ? '選號：' + [r.plate1, r.plate2, r.plate3].filter(Boolean).join('、') : r.plateMode;
+    const trade = (r.tradeInHas === '有' || r.tradeIn)
+      ? '有' + (r.tradeIn ? '，舊車牌 ' + r.tradeIn : '') + (r.sameOwner ? '，新舊車主' + r.sameOwner : '')
+      : r.tradeInHas;
+    return [
+      ['顧客姓名', r.name], ['身分證／居留證號', r.idno], ['手機', r.mobile],
+      ['出生日期', r.birth, true], ['住址', r.addr, true],
+      ['品牌', r.brand, true], ['車款', r.model], ['代號', r.code, true], ['排氣量', r.cc], ['顏色', r.color], ['引擎號碼', r.engine, true],
+      ['領照狀態', r.reg], ['付款方式', r.pay], ['領牌方式', plate], ['汰舊', trade], ['舊車引擎號碼', r.oldEngine, true],
+      ['舊車主姓名', r.oldName, true], ['舊車主身分證號', r.oldIdno, true],
+      ['舊車主地址', r.oldAddr, true], ['舊車主電話', r.oldPhone, true],
+      ['負責經銷商', r.dealer], ['備註', r.note], ['建立時間', r.createdAt], ['最後修改', r.updatedAt, true]
+    ].filter(([, v, optional]) => v || !optional);
+  }
+  let PIN = '';
+  let record = null;
+  let histData = null;   // 歷史紀錄清單（第一次打開才讀）
+  let fromList = false; // 目前這筆是不是從歷史紀錄點進來的
+
+  try {
+    const saved = localStorage.getItem(PIN_KEY);
+    if (saved) { document.getElementById('pin').value = saved; unlock(); }
+  } catch (e) {}
+
+  function unlock() {
+    const pin = document.getElementById('pin').value.trim();
+    if (!pin) return;
+    const btn = document.getElementById('pinbtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spin"></span>讀取中…';
+    document.getElementById('err').textContent = '';
+    const ok = () => {
+      PIN = pin;
+      try { localStorage.setItem(PIN_KEY, pin); } catch (e) {}
+      document.getElementById('gate').classList.add('hidden');
+      document.getElementById('tabs').classList.remove('hidden');
+    };
+    const fail = err => {
+      if (err.message.indexOf('密碼') >= 0) { try { localStorage.removeItem(PIN_KEY); } catch (e) {} }
+      document.getElementById('err').textContent = err.message;
+      btn.disabled = false;
+      btn.textContent = '查看';
+    };
+    if (RECORD_ID) {
+      google.script.run
+        .withSuccessHandler(r => { ok(); render(r); showDetail(); })
+        .withFailureHandler(fail)
+        .getRecordForDealer(RECORD_ID, pin);
+    } else {
+      google.script.run
+        .withSuccessHandler(res => { ok(); histData = res; showHistory(); })
+        .withFailureHandler(fail)
+        .getDealerHistory(pin);
+    }
+  }
+
+  /* ---------- 分頁切換 ---------- */
+
+  function setTab(which) {
+    document.getElementById('tabOne').classList.toggle('on', which === 'one');
+    document.getElementById('tabList').classList.toggle('on', which === 'list');
+    // 還沒有打開任何一筆時，不需要「這筆資料」分頁
+    document.getElementById('tabOne').classList.toggle('hidden', !record);
+  }
+
+  function showDetail() {
+    if (!record) return;
+    document.getElementById('history').classList.add('hidden');
+    document.getElementById('detail').classList.remove('hidden');
+    document.getElementById('back').classList.toggle('hidden', !fromList);
+    setTab('one');
+    window.scrollTo(0, 0);
+  }
+
+  function showHistory() {
+    if (!PIN) return; // 密碼還沒通過，不送查詢（送了只會算一次密碼錯誤）
+    document.getElementById('detail').classList.add('hidden');
+    document.getElementById('history').classList.remove('hidden');
+    setTab('list');
+    if (histData) { renderList(); return; }
+    google.script.run
+      .withSuccessHandler(res => { histData = res; renderList(); })
+      .withFailureHandler(err => { document.getElementById('listHead').textContent = '❌ ' + err.message; })
+      .getDealerHistory(PIN);
+  }
+
+  /* ---------- 歷史紀錄 ---------- */
+
+  function renderList() {
+    document.getElementById('listHead').textContent = histData.title + '：共 ' + histData.records.length + ' 位客人';
+    const q = document.getElementById('search').value.trim().toUpperCase();
+    const list = document.getElementById('list');
+    list.innerHTML = '';
+    const hits = histData.records.filter(r => !q ||
+      [r.name, r.model, r.color].some(v => String(v || '').toUpperCase().indexOf(q) >= 0));
+    if (!hits.length) {
+      list.innerHTML = '<div class="empty">' + (histData.records.length ? '找不到符合的客人' : '還沒有客人資料') + '</div>';
+      return;
+    }
+    hits.forEach(r => {
+      const div = document.createElement('div');
+      div.className = 'item';
+      div.innerHTML = '<b></b><div class="meta"></div>';
+      div.children[0].textContent = r.name;
+      if (r.updatedAt) {
+        const tag = document.createElement('span');
+        tag.className = 'tag';
+        tag.textContent = '已更新';
+        div.children[0].appendChild(tag);
+      }
+      div.children[1].textContent = [[r.model, r.color].filter(Boolean).join('／'), r.createdAt].filter(Boolean).join('　');
+      div.onclick = () => openFromList(r.id);
+      list.appendChild(div);
+    });
+  }
+
+  function openFromList(id) {
+    document.getElementById('listHead').innerHTML = '<span class="spin"></span>讀取中…';
+    document.getElementById('list').innerHTML = '<div class="loadbar"><span class="spin"></span>正在打開這位客人…</div>';
+    google.script.run
+      .withSuccessHandler(r => { fromList = true; render(r); renderList(); showDetail(); })
+      .withFailureHandler(err => { renderList(); document.getElementById('listHead').textContent = '❌ ' + err.message; })
+      .getRecordForDealer(id, PIN);
+  }
+
+  /* ---------- 單筆資料 ---------- */
+
+  function render(r) {
+    record = r;
+    document.getElementById('hName').textContent = r.name;
+    document.getElementById('hSub').textContent = [r.model, r.color].filter(Boolean).join('／') + '　' + r.createdAt;
+
+    const rows = document.getElementById('rows');
+    rows.innerHTML = '';
+    rowsFor(r).forEach(([label, value]) => {
+      const row = document.createElement('div');
+      row.className = 'row';
+      row.innerHTML = '<div class="label"></div><div class="value"></div>';
+      row.children[0].textContent = label;
+      row.children[1].textContent = value || '-';
+      rows.appendChild(row);
+    });
+
+    // 證件照片（有標題），再來是其他照片：先放轉圈的格子，照片一張張讀進來再換掉
+    const box = document.getElementById('photos');
+    box.innerHTML = '<div class="tip">點照片可以放大、下載</div>';
+    let photoNo = 0;
+    const addPhoto = (caption, fileId) => {
+      if (caption) {
+        const cap = document.createElement('div');
+        cap.className = 'cap';
+        cap.textContent = caption;
+        box.appendChild(cap);
+      }
+      const name = r.name + '_' + (caption || '照片') + '_' + (++photoNo);
+      const ph = document.createElement('div');
+      ph.className = 'ph';
+      ph.innerHTML = '<span class="spin"></span>照片載入中…';
+      box.appendChild(ph);
+      google.script.run
+        .withSuccessHandler(src => {
+          if (record !== r) return;   // 已經換看別筆了
+          if (!src) { ph.textContent = '（照片讀不到）'; return; }
+          const img = document.createElement('img');
+          img.src = src;
+          img.onclick = () => openZoom(src, caption || '照片', name);
+          ph.replaceWith(img);
+        })
+        .withFailureHandler(err => { if (record === r) ph.textContent = '❌ ' + err.message; })
+        .getDealerPhoto(r.id, PIN, fileId);
+    };
+    (r.slotPhotos || []).forEach(p => addPhoto(p.label, p.id));
+    r.photos.forEach((fileId, i) => addPhoto(i === 0 ? '其他照片' : '', fileId));
+
+    const map = document.getElementById('map');
+    map.classList.toggle('hidden', !r.addr);
+    if (r.addr) map.href = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(r.addr);
+  }
+
+  /* ---------- 照片放大、下載 ---------- */
+
+  let zoomed = null;   // 目前放大的照片 { src, name }
+
+  function openZoom(src, caption, name) {
+    zoomed = { src, name };
+    document.getElementById('zimg').src = src;
+    document.getElementById('zcap').textContent = caption;
+    document.getElementById('zmsg').classList.add('hidden');
+    document.getElementById('zoom').classList.remove('big', 'hidden');
+  }
+
+  function closeZoom() {
+    document.getElementById('zoom').classList.add('hidden');
+    document.getElementById('zimg').removeAttribute('src');
+    zoomed = null;
+  }
+
+  /** 照片檔（data: 網址 → 檔案） */
+  function photoFile() {
+    const [head, b64] = zoomed.src.split(',');
+    const type = head.slice(5, head.indexOf(';'));
+    const ext = ({ 'image/png': '.png', 'image/webp': '.webp', 'image/heic': '.heic' })[type] || '.jpg';
+    return new File([Uint8Array.from(atob(b64), c => c.charCodeAt(0))], zoomed.name + ext, { type });
+  }
+
+  function isPhone() {
+    return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Mac/.test(navigator.platform));
+  }
+
+  /** 手機叫出「分享」選單（可以存到相簿、傳 LINE）；不支援就直接下載 */
+  async function downloadPhoto() {
+    if (!zoomed) return;
+    // LINE 內建瀏覽器不能下載、長按也存不了：改用手機的瀏覽器打開這筆（卡片本來就會這樣開，這是保險）
+    if (/ Line\//i.test(navigator.userAgent)) {
+      const msg = document.getElementById('zmsg');
+      msg.innerHTML = 'LINE 裡面不能下載照片，請按這裡用手機瀏覽器打開，再按一次下載：<br><a target="_top" class="zext"></a>';
+      const a = msg.querySelector('a');
+      a.href = WEBAPP_URL + '?' + (record ? 'id=' + record.id : 'h=1') + '&openExternalBrowser=1';
+      a.textContent = '🌐 用瀏覽器打開';
+      msg.classList.remove('hidden');
+      return;
+    }
+    const file = photoFile();
+    if (isPhone() && navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file] });
+        return;
+      } catch (err) {
+        if (err.name === 'AbortError') return;   // 自己按取消
+      }
+    }
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(file);
+    a.download = file.name;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    if (isPhone()) {
+      const msg = document.getElementById('zmsg');
+      msg.textContent = '已下載到手機的「下載」資料夾；如果沒看到，可以直接長按照片儲存。';
+      msg.classList.remove('hidden');
+    }
+  }
+</script>
+</body>
+</html>
