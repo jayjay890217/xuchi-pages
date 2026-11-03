@@ -115,7 +115,7 @@
 
 <script>
   /*
-   * 經銷商頁（dealer.xuchi-moto.com）：跟 Apps Script 的 View.html 一樣，
+   * 經銷商頁（service.xuchi-moto.com/dealer/）：跟 Apps Script 的 View.html 一樣，
    * 只是放在自己的網域，資料用 fetch 向 Apps Script 拿（不帶 Google 登入），
    * 手機瀏覽器登入好幾個 Google 帳號也打得開，下載照片也能用。
    * 程式來源：apps-script\View.html；改 View.html 時這裡也要一起改。
@@ -158,6 +158,8 @@
   const PIN_KEY = 'xuchi_dealer_view_pin';
   /** 要顯示的欄位：[名稱, 值, 空的就不顯示]（出生日期、住址、代號是第 8 版以前的舊欄位） */
   function rowsFor(r) {
+    // 回收商只收到這幾樣（後台 recyclerView_）
+    if (r.recycler) return [['舊車牌', r.tradeIn], ['車主姓名', r.name], ['電話', r.phone]];
     const plate = r.plateMode === '選號' ? '選號：' + [r.plate1, r.plate2, r.plate3].filter(Boolean).join('、') : r.plateMode;
     const trade = (r.tradeInHas === '有' || r.tradeIn)
       ? '有' + (r.tradeIn ? '，舊車牌 ' + r.tradeIn : '') + (r.sameOwner ? '，新舊車主' + r.sameOwner : '')
@@ -288,7 +290,8 @@
   function render(r) {
     record = r;
     document.getElementById('hName').textContent = r.name;
-    document.getElementById('hSub').textContent = [r.model, r.color].filter(Boolean).join('／') + '　' + r.createdAt;
+    document.getElementById('hSub').textContent = r.recycler ? '♻️ 汰舊車　舊車牌 ' + (r.tradeIn || '-')
+      : [r.model, r.color].filter(Boolean).join('／') + '　' + r.createdAt;
 
     const rows = document.getElementById('rows');
     rows.innerHTML = '';
