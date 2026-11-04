@@ -63,11 +63,13 @@ a{color:var(--org)}
     <span class="tag">店家專用</span>
   </header>
 
+  <!-- 2026-11-04 起用旭馳工作台帳號登入（從工作台打開會直接進來），不再用店家密碼 -->
   <form id="v-login" class="card" hidden>
-    <h2>輸入店家密碼</h2>
-    <input class="pin" id="pin" type="password" inputmode="numeric" autocomplete="current-password" aria-label="店家密碼">
+    <h2>用旭馳工作台帳號登入</h2>
+    <label class="f">帳號<input id="lu" autocomplete="username" autocapitalize="off" autocorrect="off" spellcheck="false"></label>
+    <label class="f">密碼<input id="lp" type="password" autocomplete="current-password"></label>
     <p class="msg err" id="l-msg" role="alert"></p>
-    <button class="btn" type="submit">進入</button>
+    <button class="btn" type="submit" id="l-go">登入</button>
   </form>
 
   <div id="v-main" hidden style="display:flex;flex-direction:column;gap:16px"></div>
@@ -75,9 +77,21 @@ a{color:var(--org)}
 
 <script>
 const API_URL = "https://script.google.com/macros/s/AKfycbwFnh-qXUYky1Ltj6gFHNlSeWi3Hfc3-Rg3rgL08-8kbIooHWIXBCEQATrKVNDOnz6xpA/exec";
+// 旭馳工作台帳號（同一套帳號）；pin 欄位現在放的是工作台登入憑證，每天清晨 4 點失效
+const AUTH_API = "https://script.google.com/macros/s/AKfycbyM3jFE1rr1rUhxpvkL9hT-WzLlNIVDimjp0DtWII_Ag470GG01EVOEFIkhx-5J2ou1/exec";
+const TOKEN_KEY = "xuchi_desk_loaner";
 const $ = id => document.getElementById(id);
 let pin = "";
-try { pin = sessionStorage.getItem("xuchi_pin") || ""; } catch (e) {}
+try { pin = localStorage.getItem(TOKEN_KEY) || ""; sessionStorage.removeItem("xuchi_pin"); } catch (e) {}
+function keepToken(t) { pin = t; try { t ? localStorage.setItem(TOKEN_KEY, t) : localStorage.removeItem(TOKEN_KEY); } catch (e) {} }
+
+async function auth(api, payload) {
+  let d;
+  try { d = await (await fetch(AUTH_API, { method: "POST", body: JSON.stringify(Object.assign({ api }, payload || {})) })).json(); }
+  catch (e) { throw new Error("登入系統沒有回應，請稍後再試"); }
+  if (!d.ok) throw new Error(d.error || "登入失敗");
+  return d;
+}
 
 async function api(action, payload) {
   const res = await fetch(API_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" },
@@ -87,12 +101,20 @@ async function api(action, payload) {
   return d;
 }
 function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
-function showLogin(msg) { $("v-main").hidden = true; $("v-login").hidden = false; $("l-msg").textContent = msg || ""; $("pin").focus(); }
+function showLogin(msg) {
+  keepToken("");
+  $("v-main").hidden = true; $("v-login").hidden = false; $("l-msg").textContent = msg || ""; $("lp").value = "";
+  ($("lu").value ? $("lp") : $("lu")).focus();
+}
 
 $("v-login").addEventListener("submit", async e => {
-  e.preventDefault(); pin = $("pin").value.trim();
-  try { await api("login"); try { sessionStorage.setItem("xuchi_pin", pin); } catch (e) {} $("v-login").hidden = true; route(); }
+  e.preventDefault();
+  const user = $("lu").value.trim(), pass = $("lp").value;
+  if (!user || !pass) return showLogin("請輸入帳號和密碼");
+  const go = $("l-go"); go.disabled = true; $("l-msg").textContent = "";
+  try { const d = await auth("login", { user, pass }); keepToken(d.token); await api("login"); $("v-login").hidden = true; route(); }
   catch (err) { showLogin(err.message); }
+  finally { go.disabled = false; }
 });
 
 function route() {
@@ -185,8 +207,17 @@ function render(r, fleet) {
 }
 
 if (API_URL.startsWith("PASTE_")) { $("v-main").hidden = false; $("v-main").innerHTML = '<div class="empty">系統尚未設定完成</div>'; }
-else if (!pin) showLogin();
-else { api("login").then(route).catch(e => showLogin(e.message)); }
+else (async () => {
+  // 從工作台打開：網址帶一次性通行證 ?ticket=，換成登入憑證後從網址拿掉（#申請編號 留著）
+  const ticket = new URLSearchParams(location.search).get("ticket");
+  if (ticket) {
+    history.replaceState(null, "", location.pathname + location.hash);
+    try { keepToken((await auth("redeem", { ticket })).token); }
+    catch (e) { return showLogin(e.message); }
+  }
+  if (!pin) return showLogin();
+  try { await api("login"); route(); } catch (e) { showLogin(e.code === "BAD_PIN" ? "" : e.message); }
+})();
 </script>
 </body>
 </html>
